@@ -1,27 +1,28 @@
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = 'http://localhost:5000/api';
 
-async function fetchFromApi(endpoint) {
-  try {
-    const response = await fetch(`${BASE_URL}${endpoint}`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error(`Fetch error on ${endpoint}:`, error);
-    return { success: false, data: null, error: error.message };
+export const fetchStatus = async (poleId = 'P12') => {
+  const response = await fetch(`${BASE_URL}/status?pole_id=${poleId}`);
+  const data = await response.json();
+  if (!data.success) {
+    throw new Error(data.error);
   }
-}
+  return data.data;
+};
 
-export const api = {
-  getStatus: async () => {
-    return await fetchFromApi('/api/status');
-  },
-  getHistory: async () => {
-    return await fetchFromApi('/api/history');
-  },
-  getAlerts: async () => {
-    return await fetchFromApi('/api/alerts');
+export const fetchHistory = async () => {
+  const response = await fetch(`${BASE_URL}/history`);
+  const data = await response.json();
+  if (!data.success) {
+    throw new Error(data.error);
   }
+  return data.data;
+};
+
+export const fetchAlerts = async () => {
+  const response = await fetch(`${BASE_URL}/alerts`);
+  const data = await response.json();
+  if (!data.success) {
+    throw new Error(data.error);
+  }
+  return data.data;
 };
