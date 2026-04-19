@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand Colors */
+  --color-primary: #DC2626;
+  --color-secondary: #991B1B;
+  --color-accent: #F87171;
+  
+  /* Pure Industrial Black Palette */
+  --color-background: #000000;
+  --color-card: #0A0A0A;
+  --color-card-hover: #121212;
+  
+  /* Text Palette */
+  --color-text-primary: #F1F5F9;
+  --color-text-secondary: #94A3B8;
+  
+  /* Status Colors */
+  --color-success: #16A34A;
+  --color-danger: #DC2626;
+  --color-warning: #F59E0B;
+
+  --rounded-card: 16px;
+  
+  /* Glow Effects */
+  --shadow-red-glow: 0 0 15px rgba(220, 38, 38, 0.4);
+  --shadow-green-glow: 0 0 10px rgba(22, 163, 74, 0.2);
+
+  /* Animations */
+  @keyframes slow-pulse-red {
+    0%, 100% { 
+      box-shadow: 0 0 10px rgba(220, 38, 38, 0.3);
+      border-color: rgba(220, 38, 38, 0.4);
+    }
+    50% { 
+      box-shadow: 0 0 25px rgba(220, 38, 38, 0.6);
+      border-color: rgba(220, 38, 38, 0.8);
+    }
+  }
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .bg-gradient-main {
+    background: linear-gradient(135deg, #000000 0%, #0A0A0A 50%, #000000 100%);
+  }
+  
+  .bg-gradient-fault {
+    background: linear-gradient(to bottom right, #7F1D1D, #DC2626);
+  }
+
+  .glow-red-pulse {
+    animation: slow-pulse-red 2.5s infinite ease-in-out;
+  }
+
+  .glow-green-static {
+    box-shadow: var(--shadow-green-glow);
+    border-color: rgba(22, 163, 74, 0.3);
+  }
+
+  .glass-card {
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+}
