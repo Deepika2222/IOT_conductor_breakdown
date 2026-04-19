@@ -23,7 +23,7 @@ const getPoleStatus = async (poleId = 'P12') => {
     const response = await axios.get(url);
     const feed = response.data.feeds?.[0];
 
-    // 🔴 If no data available
+    // 🔴 No data case
     if (!feed) {
       return {
         pole_id: poleId,
@@ -33,15 +33,12 @@ const getPoleStatus = async (poleId = 'P12') => {
       };
     }
 
-    // 🟢 Safe parsing
     const current = Number(feed.field1 || 0);
-    const voltage = Number(feed.field2 || 0);
     const tilt = Number(feed.field3 || 0);
 
     let status = 'NORMAL';
     let fault_type = null;
 
-    // 🔥 Fault logic
     if (current < 20 || tilt === 1) {
       status = 'FAULT';
       fault_type = 'BREAKAGE';
@@ -57,7 +54,6 @@ const getPoleStatus = async (poleId = 'P12') => {
   } catch (error) {
     console.error("ThingSpeak Error:", error.message);
 
-    // 🔴 fallback response
     return {
       pole_id: poleId,
       status: 'UNKNOWN',
@@ -82,20 +78,32 @@ const getActiveAlerts = async () => {
     const response = await axios.get(url);
     const feeds = response.data.feeds || [];
 
-    const alerts = [];
+    // 🔥 Step 1: Filter faults
+    let alerts = feeds
+      .filter((f) => {
+        const current = Number(f.field1 || 0);
+        const tilt = Number(f.field3 || 0);
+        return current < 20 || tilt === 1;
+      })
+      .map((f) => ({
+        type: 'BREAKAGE',       // CONTRACT: DO NOT MODIFY
+        pole_id: 'P12',
+        time: f.created_at,
+      }));
 
-    feeds.forEach((f) => {
-      const current = Number(f.field1 || 0);
-      const tilt = Number(f.field3 || 0);
-
-      if (current < 20 || tilt === 1) {
-        alerts.push({
-          type: 'BREAKAGE',
-          pole_id: 'P12',
-          time: f.created_at,
-        });
-      }
+    // 🔥 Step 2: Remove duplicates (same timestamp)
+    const seen = new Set();
+    alerts = alerts.filter((a) => {
+      if (seen.has(a.time)) return false;
+      seen.add(a.time);
+      return true;
     });
+
+    // 🔥 Step 3: Sort latest first
+    alerts.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+    // 🔥 Step 4: Limit results (optional)
+    alerts = alerts.slice(0, 5);
 
     return alerts;
 
