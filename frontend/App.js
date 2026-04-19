@@ -1,9 +1,15 @@
-// TODO: implement logic
-// App.js - Root UI component placeholder
+import { Dashboard } from './src/pages/Dashboard.js';
 
-function App() {
-  // TODO: implement logic
-  return null;
+export default async function App() {
+  const root = document.getElementById('root');
+  
+  // Render structure
+  root.innerHTML = Dashboard.render();
+  
+  // Mount logic and load data
+  await Dashboard.mount(root);
 }
 
-export default App;
+document.addEventListener('DOMContentLoaded', () => {
+  App();
+});
