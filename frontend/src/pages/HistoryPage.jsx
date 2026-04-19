@@ -29,9 +29,9 @@ export default function HistoryPage() {
 
         setChartData(formattedHistory);
         setSummaryData({
-          avgCurrent: history.reduce((acc, h) => acc + h.current, 0) / (history.length || 1),
-          avgVoltage: history.reduce((acc, h) => acc + h.voltage, 0) / (history.length || 1),
-          maxTilt: Math.max(...history.map(h => h.tilt), 0),
+          avgCurrent: (history.reduce((acc, h) => acc + h.current, 0) / (history.length || 1)).toFixed(2),
+          avgVoltage: (history.reduce((acc, h) => acc + h.voltage, 0) / (history.length || 1)).toFixed(2),
+          maxTilt: Math.max(...history.map(h => h.tilt), 0).toFixed(2),
           faults: status.status === 'FAULT' ? 1 : 0
         });
       } catch (err) {

@@ -39,17 +39,7 @@ export default function AlertsPage() {
       try {
         setLoading(true);
         const data = await fetchAlerts();
-        // Fallback mock data if API returns an empty array, or just use what api provides.
-        if (data.length === 0) {
-          setAlerts([
-            { id: '1', type: 'BREAKAGE', pole_id: 'P12', time: '2026-04-19T10:05:00Z' },
-            { id: '2', type: 'OVERHEATING', pole_id: 'P18', time: '2026-04-19T11:20:00Z' },
-            { id: '3', type: 'SAG', pole_id: 'P05', time: new Date(Date.now() - 3600000).toISOString() },
-            { id: '4', type: 'BREAKAGE', pole_id: 'P02', time: new Date(Date.now() - 86400000).toISOString() },
-          ]);
-        } else {
-          setAlerts(data);
-        }
+        setAlerts(data);
       } catch (err) {
         setError(err.message);
       } finally {
