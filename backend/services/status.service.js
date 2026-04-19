@@ -3,55 +3,106 @@
  * Business logic layer for pole status and fault alerts.
  *
  * CONTRACT: DO NOT MODIFY — response shapes are shared with frontend team.
- *
- * TODO: Replace mock data with real database queries.
- * TODO: Integrate alerting engine (e.g. push notifications, SMS via Twilio).
  */
 
 const { simulateDelay } = require('../utils/delay');
+const axios = require('axios');
 
 /**
  * Returns the current fault status of a given pole.
- *
- * @param {string} poleId - The pole identifier (e.g. "P12")
- * @returns {Object} - { pole_id, status, fault_type, last_updated }
- *
- * TODO: Accept poleId from query params in controller.
- * TODO: await PoleStatus.findOne({ pole_id: poleId });
  */
 const getPoleStatus = async (poleId = 'P12') => {
   await simulateDelay();
 
-  // TODO: Replace with real DB lookup
-  // CONTRACT: DO NOT MODIFY — field names: pole_id, status, fault_type, last_updated
-  return {
-    pole_id: poleId,
-    status: 'FAULT',
-    fault_type: 'BREAKAGE',
-    last_updated: '2026-04-19T10:30:00',
-  };
+  const CHANNEL_ID = process.env.TS_CHANNEL_ID;
+  const READ_KEY = process.env.TS_READ_KEY;
+
+  const url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json?api_key=${READ_KEY}&results=1`;
+
+  try {
+    const response = await axios.get(url);
+    const feed = response.data.feeds?.[0];
+
+    // 🔴 If no data available
+    if (!feed) {
+      return {
+        pole_id: poleId,
+        status: 'NORMAL',
+        fault_type: null,
+        last_updated: new Date().toISOString(),
+      };
+    }
+
+    // 🟢 Safe parsing
+    const current = Number(feed.field1 || 0);
+    const voltage = Number(feed.field2 || 0);
+    const tilt = Number(feed.field3 || 0);
+
+    let status = 'NORMAL';
+    let fault_type = null;
+
+    // 🔥 Fault logic
+    if (current < 20 || tilt === 1) {
+      status = 'FAULT';
+      fault_type = 'BREAKAGE';
+    }
+
+    return {
+      pole_id: poleId,
+      status,
+      fault_type,
+      last_updated: feed.created_at,
+    };
+
+  } catch (error) {
+    console.error("ThingSpeak Error:", error.message);
+
+    // 🔴 fallback response
+    return {
+      pole_id: poleId,
+      status: 'UNKNOWN',
+      fault_type: null,
+      last_updated: new Date().toISOString(),
+    };
+  }
 };
 
 /**
- * Returns a list of active fault alerts.
- *
- * @returns {Array} - Array of { type, pole_id, time }
- *
- * TODO: Accept limit / page query params for pagination.
- * TODO: await Alert.find({}).sort({ time: -1 }).limit(limit);
+ * Returns active alerts list
  */
 const getActiveAlerts = async () => {
   await simulateDelay();
 
-  // TODO: Replace with real DB query
-  // CONTRACT: DO NOT MODIFY — field names: type, pole_id, time
-  return [
-    {
-      type: 'BREAKAGE',
-      pole_id: 'P12',
-      time: '2026-04-19T10:05:00',
-    },
-  ];
+  const CHANNEL_ID = process.env.TS_CHANNEL_ID;
+  const READ_KEY = process.env.TS_READ_KEY;
+
+  const url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json?api_key=${READ_KEY}&results=10`;
+
+  try {
+    const response = await axios.get(url);
+    const feeds = response.data.feeds || [];
+
+    const alerts = [];
+
+    feeds.forEach((f) => {
+      const current = Number(f.field1 || 0);
+      const tilt = Number(f.field3 || 0);
+
+      if (current < 20 || tilt === 1) {
+        alerts.push({
+          type: 'BREAKAGE',
+          pole_id: 'P12',
+          time: f.created_at,
+        });
+      }
+    });
+
+    return alerts;
+
+  } catch (error) {
+    console.error("Alert Fetch Error:", error.message);
+    return [];
+  }
 };
 
 module.exports = { getPoleStatus, getActiveAlerts };
