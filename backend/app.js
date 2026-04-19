@@ -18,13 +18,14 @@
  */
 
 const express = require('express');
-const cors    = require('cors');
+const cors = require('cors');
 
 const { requestLogger } = require('./utils/logger');
 
 // ─── Route Modules ────────────────────────────────────────────────────────────
 const sensorRoutes = require('./routes/sensor.routes');
 const statusRoutes = require('./routes/status.routes');
+const settingsRoutes = require('./routes/settings.routes');
 
 const app = express();
 
@@ -56,6 +57,7 @@ app.use(requestLogger);
 //
 app.use('/api', sensorRoutes);
 app.use('/api', statusRoutes);
+app.use('/api', settingsRoutes);
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 // Sanity endpoint — not part of the API contract, for ops/DevOps use only.
