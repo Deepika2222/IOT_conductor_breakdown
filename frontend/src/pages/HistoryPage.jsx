@@ -12,9 +12,13 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let intervalId;
+    let isMounted = true;
+    let firstLoad = true;
+
     const loadData = async () => {
       try {
-        setLoading(true);
+        if (firstLoad) setLoading(true);
         const [history, status] = await Promise.all([
           fetchHistory(),
           fetchStatus('P12')
@@ -27,21 +31,49 @@ export default function HistoryPage() {
           tilt: h.tilt
         }));
 
-        setChartData(formattedHistory);
-        setSummaryData({
-          avgCurrent: (history.reduce((acc, h) => acc + h.current, 0) / (history.length || 1)).toFixed(2),
-          avgVoltage: (history.reduce((acc, h) => acc + h.voltage, 0) / (history.length || 1)).toFixed(2),
-          maxTilt: Math.max(...history.map(h => h.tilt), 0).toFixed(2),
-          faults: status.status === 'FAULT' ? 1 : 0
-        });
+        if (isMounted) {
+          setChartData(formattedHistory);
+          setSummaryData({
+            avgCurrent: (history.reduce((acc, h) => acc + h.current, 0) / (history.length || 1)).toFixed(2),
+            avgVoltage: (history.reduce((acc, h) => acc + h.voltage, 0) / (history.length || 1)).toFixed(2),
+            maxTilt: Math.max(...history.map(h => h.tilt), 0).toFixed(2),
+            faults: status.status === 'FAULT' ? 1 : 0
+          });
+        }
       } catch (err) {
         console.error('Failed to load history:', err);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+          firstLoad = false;
+        }
       }
     };
 
-    loadData();
+    const setupPolling = async () => {
+      let intervalMs = 4000;
+      try {
+        const { fetchSettings } = await import('../services/settingsService');
+        const settingsRes = await fetchSettings();
+        if (settingsRes && settingsRes.success && settingsRes.data?.pollingInterval) {
+           intervalMs = parseInt(settingsRes.data.pollingInterval) * 1000;
+        }
+      } catch (e) {
+        console.error("Failed to fetch settings for polling interval", e);
+      }
+      
+      if (isMounted) {
+        loadData();
+        intervalId = setInterval(loadData, intervalMs);
+      }
+    };
+
+    setupPolling();
+
+    return () => {
+      isMounted = false;
+      if (intervalId) clearInterval(intervalId);
+    };
   }, []);
 
   if (loading) {
