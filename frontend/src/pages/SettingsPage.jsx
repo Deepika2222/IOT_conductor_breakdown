@@ -6,23 +6,30 @@ import SystemModeSelect from '../components/settings/SystemModeSelect';
 import PollingSelector from '../components/settings/PollingSelector';
 import UserInfoCard from '../components/settings/UserInfoCard';
 
+const DEFAULT_SETTINGS = {
+  currentThreshold: 250,
+  leakageThreshold: 50,
+  tiltSensitivity: true,
+  smsAlerts: true,
+  emailAlerts: false,
+  soundAlert: true,
+  systemMode: 'auto',
+  pollingInterval: '5',
+};
+
 const SettingsPage = () => {
-  const [settings, setSettings] = useState({
-    currentThreshold: 250,
-    leakageThreshold: 50,
-    tiltSensitivity: true,
-    smsAlerts: true,
-    emailAlerts: false,
-    soundAlert: true,
-    systemMode: 'auto',
-    pollingInterval: '5',
+  const [settings, setSettings] = useState(() => {
+    const saved = localStorage.getItem('iot_settings');
+    return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
   });
 
   const [showToast, setShowToast] = useState(false);
 
   const handleSave = () => {
-    // Simulate API call
-    console.log('Saving settings:', settings);
+    // Persist to localStorage
+    localStorage.setItem('iot_settings', JSON.stringify(settings));
+    console.log('Settings persisted:', settings);
+    
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
   };
