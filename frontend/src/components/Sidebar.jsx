@@ -57,9 +57,18 @@ export default function Sidebar() {
         >
           <Settings size={18} /> <span className="text-sm font-medium">Settings</span>
         </NavLink>
-        <button className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all text-sm font-medium">
-          <HelpCircle size={18} /> Support
-        </button>
+        <NavLink
+          to="/support"
+          className={({ isActive }) => 
+            `flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all duration-300 group ${
+              isActive 
+                ? 'bg-primary text-white shadow-lg shadow-primary/20' 
+                : 'text-text-secondary hover:text-text-primary hover:bg-white/5'
+            }`
+          }
+        >
+          <HelpCircle size={18} /> <span className="text-sm font-medium">Support</span>
+        </NavLink>
       </div>
 
       {/* System Status Footnote */}

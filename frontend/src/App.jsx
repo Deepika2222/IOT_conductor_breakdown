@@ -5,6 +5,7 @@ import AlertsPage from './pages/AlertsPage';
 import HistoryPage from './pages/HistoryPage';
 import PoleDetailPage from './pages/PoleDetailPage';
 import SettingsPage from './pages/SettingsPage';
+import SupportPage from './pages/SupportPage';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/pole/:id" element={<PoleDetailPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/support" element={<SupportPage />} />
           </Routes>
         </main>
       </div>

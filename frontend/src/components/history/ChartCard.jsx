@@ -10,10 +10,12 @@ import {
   Area,
   ScatterChart,
   Scatter,
-  ZAxis
+  ZAxis,
+  ReferenceLine,
+  ReferenceDot
 } from 'recharts';
 
-export default function ChartCard({ title, data, type, dataKey, color, unit }) {
+export default function ChartCard({ title, subtitle, data, type, dataKey, color, unit, highlightedTime }) {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -40,7 +42,10 @@ export default function ChartCard({ title, data, type, dataKey, color, unit }) {
       ></div>
 
       <div className="flex items-center justify-between mb-6">
-        <h3 className="font-semibold text-content/90 tracking-tight">{title}</h3>
+        <div>
+          <h3 className="font-semibold text-content/90 tracking-tight">{title}</h3>
+          {subtitle && <p className="text-[10px] text-primary font-bold uppercase tracking-widest mt-1 opacity-70">Range: {subtitle}</p>}
+        </div>
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/5 text-content/40 uppercase tracking-widest">Live Feed</span>
           <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></div>
@@ -64,12 +69,46 @@ export default function ChartCard({ title, data, type, dataKey, color, unit }) {
                 tickLine={false} 
                 tick={{ fill: 'rgba(226,232,240,0.3)', fontSize: 10 }} 
                 dy={10}
+                tickFormatter={(val) => {
+                  const point = data.find(p => p.time === val);
+                  return point ? point.displayLabel : val;
+                }}
               />
               <YAxis 
                 hide 
                 domain={['auto', 'auto']}
               />
               <Tooltip content={<CustomTooltip />} />
+              
+              {highlightedTime && (
+                <ReferenceLine 
+                  x={highlightedTime} 
+                  stroke={color} 
+                  strokeDasharray="3 3" 
+                  strokeWidth={2}
+                  label={{ 
+                    position: 'top', 
+                    value: 'Anomaly', 
+                    fill: color, 
+                    fontSize: 10, 
+                    fontWeight: 'bold',
+                    className: 'animate-pulse'
+                  }}
+                />
+              )}
+
+              {highlightedTime && data.find(d => d.time === highlightedTime) && (
+                <ReferenceDot
+                  x={highlightedTime}
+                  y={data.find(d => d.time === highlightedTime)[dataKey]}
+                  r={6}
+                  fill={color}
+                  stroke="#fff"
+                  strokeWidth={2}
+                  className="animate-pulse"
+                />
+              )}
+
               <Area 
                 type="monotone" 
                 dataKey={dataKey} 
@@ -85,16 +124,50 @@ export default function ChartCard({ title, data, type, dataKey, color, unit }) {
                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.03)" />
                <XAxis 
                 dataKey="time" 
+                type="category"
                 axisLine={false} 
                 tickLine={false} 
                 tick={{ fill: 'rgba(226,232,240,0.3)', fontSize: 10 }} 
                 dy={10}
+                tickFormatter={(val) => {
+                  const point = data.find(p => p.time === val);
+                  return point ? point.displayLabel : val;
+                }}
               />
-              <YAxis hide />
+              <YAxis 
+                type="number" 
+                dataKey={dataKey} 
+                name={unit} 
+                hide 
+                domain={[0, 2]} 
+              />
               <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.1)' }} />
+              
+              {highlightedTime && (
+                <ReferenceLine 
+                  x={highlightedTime} 
+                  stroke={color} 
+                  strokeDasharray="4 4" 
+                  strokeWidth={2}
+                />
+              )}
+
+              {highlightedTime && data.find(d => d.time === highlightedTime) && (
+                <ReferenceDot
+                  x={highlightedTime}
+                  y={data.find(d => d.time === highlightedTime)[dataKey]}
+                  r={6}
+                  fill={color}
+                  stroke="#fff"
+                  strokeWidth={2}
+                  className="animate-pulse"
+                />
+              )}
+              
               <Scatter 
                 name={title} 
                 data={data} 
+                dataKey={dataKey}
                 fill={color}
               />
             </ScatterChart>
