@@ -8,6 +8,8 @@
 const { simulateDelay } = require('../utils/delay');
 const axios = require('axios');
 
+const { getSettings } = require('./settings.service');
+
 /**
  * Returns the current fault status of a given pole.
  */
@@ -36,10 +38,20 @@ const getPoleStatus = async (poleId = 'P12') => {
     const current = Number(feed.field1 || 0);
     const tilt = Number(feed.field3 || 0);
 
+    const settings = await getSettings();
+    const currentThreshold = Number(settings.current_threshold || 50);
+    const useTilt = settings.tilt_sensitivity !== false;
+
     let status = 'NORMAL';
     let fault_type = null;
 
-    if (current < 20 || tilt === 1) {
+    if (useTilt && tilt >= 1) {
+      status = 'FAULT';
+      fault_type = 'SAG';
+    } else if (current > currentThreshold) {
+      status = 'FAULT';
+      fault_type = 'OVERHEATING';
+    } else if (current < 20) {
       status = 'FAULT';
       fault_type = 'BREAKAGE';
     }
@@ -78,18 +90,34 @@ const getActiveAlerts = async () => {
     const response = await axios.get(url);
     const feeds = response.data.feeds || [];
 
+    const settings = await getSettings();
+    const currentThreshold = Number(settings.current_threshold || 50);
+    const useTilt = settings.tilt_sensitivity !== false;
+
     // 🔥 Step 1: Filter faults
     let alerts = feeds
-      .filter((f) => {
+      .map((f) => {
         const current = Number(f.field1 || 0);
         const tilt = Number(f.field3 || 0);
-        return current < 20 || tilt === 1;
+        
+        let type = null;
+        if (useTilt && tilt >= 1) {
+           type = 'SAG';
+        } else if (current > currentThreshold) {
+           type = 'OVERHEATING';
+        } else if (current < 20) {
+           type = 'BREAKAGE';
+        }
+        
+        if (!type) return null;
+
+        return {
+          type,
+          pole_id: 'P12',
+          time: f.created_at,
+        };
       })
-      .map((f) => ({
-        type: 'BREAKAGE',       // CONTRACT: DO NOT MODIFY
-        pole_id: 'P12',
-        time: f.created_at,
-      }));
+      .filter(Boolean); // Remove nulls
 
     // 🔥 Step 2: Remove duplicates (same timestamp)
     const seen = new Set();

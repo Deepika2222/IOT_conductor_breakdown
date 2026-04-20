@@ -23,13 +23,15 @@ export default function HistoryPage() {
   const [feedback, setFeedback] = useState(null);
 
   useEffect(() => {
-    setActiveHighlight(null);
+    let intervalId;
+    let isMounted = true;
+    let firstLoad = true;
+
     const loadData = async () => {
       try {
-        setLoading(true);
+        if (firstLoad) setLoading(true);
         const savedSettings = localStorage.getItem('iot_settings');
         const thresholds = savedSettings ? JSON.parse(savedSettings) : DEFAULT_THRESHOLDS;
-
         const [history, status] = await Promise.all([
           fetchHistory(), 
           fetchStatus('P12')
@@ -89,23 +91,50 @@ export default function HistoryPage() {
         });
 
         const generatedInsights = analyzeSensorData(formattedHistory, thresholds);
-        setInsights(generatedInsights);
-        setChartData(formattedHistory);
-        
-        setSummaryData({
-          avgCurrent: (displayHistory.reduce((acc, h) => acc + h.current, 0) / (displayHistory.length || 1)).toFixed(2),
-          avgVoltage: (displayHistory.reduce((acc, h) => acc + h.voltage, 0) / (displayHistory.length || 1)).toFixed(2),
-          maxTilt: Math.max(...displayHistory.map(h => h.tilt), 0).toFixed(2),
-          faults: status.status === 'FAULT' ? 1 : 0
-        });
+        if (isMounted) {
+          setInsights(generatedInsights);
+          setChartData(formattedHistory);
+          setSummaryData({
+            avgCurrent: (displayHistory.reduce((acc, h) => acc + h.current, 0) / (displayHistory.length || 1)).toFixed(2),
+            avgVoltage: (displayHistory.reduce((acc, h) => acc + h.voltage, 0) / (displayHistory.length || 1)).toFixed(2),
+            maxTilt: Math.max(...displayHistory.map(h => h.tilt), 0).toFixed(2),
+            faults: status.status === 'FAULT' ? 1 : 0
+          });
+        }
       } catch (err) {
         console.error('Failed history load:', err);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+          firstLoad = false;
+        }
       }
     };
 
-    loadData();
+    const setupPolling = async () => {
+      let intervalMs = 4000;
+      try {
+        const { fetchSettings } = await import('../services/settingsService');
+        const settingsRes = await fetchSettings();
+        if (settingsRes && settingsRes.success && settingsRes.data?.pollingInterval) {
+           intervalMs = parseInt(settingsRes.data.pollingInterval) * 1000;
+        }
+      } catch (e) {
+        console.error("Failed to fetch settings for polling interval", e);
+      }
+      
+      if (isMounted) {
+        await loadData();
+        intervalId = setInterval(loadData, intervalMs);
+      }
+    };
+
+    setupPolling();
+
+    return () => {
+      isMounted = false;
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [activeTimeRange]);
 
   const handleExportCSV = () => {
@@ -125,6 +154,7 @@ export default function HistoryPage() {
   };
 
   const handleRangeChange = (range, customValue = null) => {
+    setActiveHighlight(null);
     setActiveTimeRange(range);
     if (customValue) showFeedback(`${customValue} Range Activated`);
   };
