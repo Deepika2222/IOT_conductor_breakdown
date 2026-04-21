@@ -6,35 +6,38 @@ import NotificationSettings from '../components/settings/NotificationSettings';
 import SystemModeSelect from '../components/settings/SystemModeSelect';
 import PollingSelector from '../components/settings/PollingSelector';
 import UserInfoCard from '../components/settings/UserInfoCard';
+import { fetchSettings, updateSettings } from '../services/settingsService';
 
-import { fetchSettings, updateSettings } from "../services/settingsService";
+const DEFAULT_SETTINGS = {
+  currentThreshold: 250,
+  leakageThreshold: 50,
+  tiltSensitivity: true,
+  smsAlerts: true,
+  emailAlerts: false,
+  soundAlert: true,
+  systemMode: 'auto',
+  pollingInterval: '5',
+};
 
 const SettingsPage = () => {
-
-  const [settings, setSettings] = useState({
-    currentThreshold: 250,
-    leakageThreshold: 50,
-    tiltSensitivity: true,
-    smsAlerts: true,
-    emailAlerts: false,
-    soundAlert: true,
-    systemMode: 'auto',
-    pollingInterval: '5',
+  const [settings, setSettings] = useState(() => {
+    const saved = localStorage.getItem('iot_settings');
+    return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
   });
 
   const [showToast, setShowToast] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // ✅ STEP 1: FETCH SETTINGS FROM BACKEND
   useEffect(() => {
     const loadSettings = async () => {
       try {
         const res = await fetchSettings();
-        if (res.success) {
+        if (res.success && res.data) {
           setSettings(res.data);
+          localStorage.setItem('iot_settings', JSON.stringify(res.data));
         }
-      } catch (err) {
-        console.error("Failed to load settings");
+      } catch {
+        console.error('Failed to load settings');
       } finally {
         setLoading(false);
       }
@@ -43,8 +46,8 @@ const SettingsPage = () => {
     loadSettings();
   }, []);
 
-  // ✅ STEP 2: SAVE SETTINGS TO BACKEND
   const handleSave = async () => {
+    localStorage.setItem('iot_settings', JSON.stringify(settings));
     try {
       const res = await updateSettings(settings);
 
@@ -52,10 +55,11 @@ const SettingsPage = () => {
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3000);
       } else {
-        alert("Failed to save settings");
+        alert('Failed to save settings');
       }
-    } catch (err) {
-      console.error("Error saving settings");
+    } catch {
+      console.error('Error saving settings');
+      alert('Failed to save settings');
     }
   };
 

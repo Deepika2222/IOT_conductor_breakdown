@@ -1,35 +1,6 @@
 import { Lightbulb, TrendingDown, Zap, AlertTriangle, ArrowRight } from 'lucide-react';
 
-export default function InsightsPanel() {
-  const insights = [
-    {
-      type: "danger",
-      icon: TrendingDown,
-      text: "Current dropped sharply at 10:05 AM",
-      description: "Detected a 45% decrease within 2 seconds. Potential conductor fatigue.",
-      highlight: "10:05 AM",
-      color: "text-danger",
-      bg: "bg-danger/10"
-    },
-    {
-      type: "warning",
-      icon: Zap,
-      text: "Voltage spike detected before fault",
-      description: "Pre-breakdown surge observed on Pole #3 (Oak Ave). Correlation with previous events matches.",
-      highlight: "Voltage spike",
-      color: "text-warning",
-      bg: "bg-warning/10"
-    },
-    {
-      type: "primary",
-      icon: AlertTriangle,
-      text: "Tilt triggered at same timestamp as breakage",
-      description: "Physical movement synchronized with electrical discontinuity confirms physical breakdown.",
-      highlight: "tilt",
-      color: "text-primary",
-      bg: "bg-primary/10"
-    }
-  ];
+export default function InsightsPanel({ insights = [], onInsightClick, activeInsightId }) {
 
   return (
     <div className="bg-card rounded-[20px] border border-white/5 p-6 shadow-layered h-full flex flex-col backdrop-blur-xl">
@@ -45,8 +16,16 @@ export default function InsightsPanel() {
 
       <div className="space-y-4 flex-grow">
         {insights.map((insight, idx) => (
-          <div key={idx} className="group cursor-pointer">
-            <div className={`flex gap-4 p-4 rounded-2xl border border-white/5 hover:border-white/10 transition-all duration-300 ${insight.bg} backdrop-blur-sm group-hover:-translate-y-0.5 group-hover:shadow-lg`}>
+          <div 
+            key={insight.id || idx} 
+            className="group cursor-pointer"
+            onClick={() => onInsightClick?.(insight)}
+          >
+            <div className={`flex gap-4 p-4 rounded-2xl border transition-all duration-300 backdrop-blur-sm group-hover:-translate-y-0.5 group-hover:shadow-lg ${
+              activeInsightId === insight.id 
+                ? `${insight.bg} border-white/20 ring-2 ring-primary/20 scale-[1.02]` 
+                : `${insight.bg} border-white/5 hover:border-white/10`
+            }`}>
               <div className={`p-2 rounded-lg bg-black/40 h-fit ${insight.color} border border-white/5 shadow-inner`}>
                 <insight.icon size={18} />
               </div>
@@ -67,8 +46,8 @@ export default function InsightsPanel() {
                   {insight.description}
                 </p>
               </div>
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center pr-1">
-                <ArrowRight size={14} className="text-text-secondary/30" />
+              <div className={`transition-opacity flex items-center pr-1 ${activeInsightId === insight.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                <ArrowRight size={14} className={activeInsightId === insight.id ? 'text-primary' : 'text-text-secondary/30'} />
               </div>
             </div>
           </div>
