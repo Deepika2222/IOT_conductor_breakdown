@@ -8,6 +8,8 @@
 const { simulateDelay } = require('../utils/delay');
 const axios = require('axios');
 
+const { getSettings } = require('./settings.service');
+
 /**
  * Processes an incoming sensor reading and returns a fault status.
  *
@@ -16,12 +18,14 @@ const axios = require('axios');
 const processSensorData = async (payload) => {
   await simulateDelay();
 
-  // 🔥 Simple rule (same as status service)
   const { current, tilt } = payload;
+  const settings = await getSettings();
+  const currentThreshold = Number(settings.current_threshold || 50);
+  const useTilt = settings.tilt_sensitivity !== false;
 
   let status = 'NORMAL';
 
-  if (Number(current) < 20 || Number(tilt) === 1) {
+  if ((useTilt && Number(tilt) >= 1) || Number(current) > currentThreshold || Number(current) < 20) {
     status = 'FAULT';
   }
 

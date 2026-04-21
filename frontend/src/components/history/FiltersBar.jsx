@@ -1,6 +1,25 @@
 import { Calendar, Filter, MapPin } from 'lucide-react';
+import { useRef } from 'react';
 
-export default function FiltersBar() {
+export default function FiltersBar({ activeRange, onRangeChange }) {
+  const dateInputRef = useRef(null);
+
+  const ranges = [
+    { label: '1H', value: '1H' },
+    { label: '24H', value: '24H' },
+    { label: '7D', value: '7D' },
+  ];
+
+  const handleCustomClick = () => {
+    dateInputRef.current?.showPicker();
+  };
+
+  const handleDateChange = (e) => {
+    if (e.target.value) {
+      onRangeChange('Custom', e.target.value);
+    }
+  };
+
   return (
     <div className="bg-card rounded-card border border-white/5 p-4 mb-6 flex flex-col md:flex-row items-center justify-between shadow-layered gap-4 relative z-20">
       <div className="flex items-center gap-3">
@@ -26,19 +45,41 @@ export default function FiltersBar() {
 
         {/* Time Selection */}
         <div className="flex items-center bg-background rounded-lg p-1 border border-white/10 shadow-inner">
-          <button className="px-4 py-1.5 text-sm rounded-md bg-white/10 text-white shadow-sm font-medium transition-all">
-            1H
-          </button>
-          <button className="px-4 py-1.5 text-sm rounded-md hover:bg-white/5 text-text-secondary hover:text-white transition-all font-medium">
-            24H
-          </button>
-          <button className="px-4 py-1.5 text-sm rounded-md hover:bg-white/5 text-text-secondary hover:text-white transition-all font-medium">
-            7D
-          </button>
+          {ranges.map((range) => (
+            <button
+              key={range.value}
+              onClick={() => onRangeChange(range.value)}
+              className={`px-4 py-1.5 text-sm rounded-md transition-all font-medium ${
+                activeRange === range.value
+                  ? 'bg-white/10 text-white shadow-sm'
+                  : 'text-text-secondary hover:text-white hover:bg-white/5'
+              }`}
+            >
+              {range.label}
+            </button>
+          ))}
+          
           <div className="w-[1px] h-4 bg-white/10 mx-2"></div>
-          <button className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md hover:bg-white/5 text-text-secondary hover:text-white transition-all">
-            <Calendar size={14} /> Custom
+          
+          <button 
+            onClick={handleCustomClick}
+            className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-all ${
+              activeRange === 'Custom'
+                ? 'bg-white/10 text-white shadow-sm'
+                : 'text-text-secondary hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Calendar size={14} /> 
+            {activeRange === 'Custom' ? 'Custom Selected' : 'Custom'}
           </button>
+          
+          {/* Hidden Date Input */}
+          <input 
+            type="date"
+            ref={dateInputRef}
+            className="sr-only"
+            onChange={handleDateChange}
+          />
         </div>
       </div>
     </div>

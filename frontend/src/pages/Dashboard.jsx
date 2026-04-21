@@ -60,9 +60,33 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, 4000); // 4 seconds short polling
-    return () => clearInterval(interval);
+    let intervalId;
+    let isMounted = true;
+
+    const setupPolling = async () => {
+      let intervalMs = 4000;
+      try {
+        const { fetchSettings } = await import('../services/settingsService');
+        const settingsRes = await fetchSettings();
+        if (settingsRes && settingsRes.success && settingsRes.data?.pollingInterval) {
+           intervalMs = parseInt(settingsRes.data.pollingInterval) * 1000;
+        }
+      } catch (e) {
+        console.error("Failed to fetch settings for polling interval", e);
+      }
+      
+      if (isMounted) {
+        loadData();
+        intervalId = setInterval(loadData, intervalMs);
+      }
+    };
+
+    setupPolling();
+
+    return () => {
+      isMounted = false;
+      if (intervalId) clearInterval(intervalId);
+    };
   }, []);
 
   if (loading && !data.history.length) {
